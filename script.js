@@ -120,7 +120,7 @@ function calculateStrength(password, mode) {
     { text: 'Fraca', color: '#f97316' },       // 1 bar
     { text: 'Média', color: '#f59e0b' },       // 2 bars
     { text: 'Forte', color: '#10b981' },       // 3 bars
-    { text: 'Muito Forte', color: '#3b82f6' }  // 4 bars
+    { text: 'Muito Forte', color: '#2563eb' }  // 4 bars
   ];
 
   return {
@@ -147,7 +147,7 @@ function updateStrengthUI(password) {
     if (index < score) {
       bar.style.backgroundColor = color;
     } else {
-      bar.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+      bar.style.backgroundColor = '#e2e8f0';
     }
   });
 }
@@ -397,9 +397,19 @@ function initEvents() {
           if (currentMode === 'pin') {
             optionsGrid.style.opacity = '0.4';
             optionsGrid.style.pointerEvents = 'none';
+            // Set PIN default length to 4
+            if (lengthSlider && lengthValue) {
+              lengthSlider.value = 4;
+              lengthValue.textContent = '4';
+            }
           } else {
             optionsGrid.style.opacity = '1';
             optionsGrid.style.pointerEvents = 'auto';
+            // Set Custom Password default length to 10 if previously set to PIN default
+            if (lengthSlider && lengthValue && lengthSlider.value === '4') {
+              lengthSlider.value = 10;
+              lengthValue.textContent = '10';
+            }
           }
         }
 
