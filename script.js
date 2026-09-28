@@ -31,7 +31,7 @@ function getRandomInt(min, max) {
  */
 function generatePasswordOptions(options) {
   const { length, includeNumbers, includeUppercase, includeLowercase, includeSymbols, mode } = options;
-
+  
   if (mode === 'pin') {
     let pin = '';
     for (let i = 0; i < length; i++) {
@@ -120,7 +120,7 @@ function calculateStrength(password, mode) {
     { text: 'Fraca', color: '#f97316' },       // 1 bar
     { text: 'Média', color: '#f59e0b' },       // 2 bars
     { text: 'Forte', color: '#10b981' },       // 3 bars
-    { text: 'Muito Forte', color: '#3b82f6' }  // 4 bars
+    { text: 'Muito Forte', color: '#2563eb' }  // 4 bars
   ];
 
   return {
@@ -134,6 +134,7 @@ function calculateStrength(password, mode) {
  * Render Password Strength UI
  */
 function updateStrengthUI(password) {
+  if (typeof document === 'undefined') return;
   const strengthText = document.getElementById('strengthText');
   const strengthBars = document.getElementById('strengthBars');
   if (!strengthText || !strengthBars) return;
@@ -147,7 +148,7 @@ function updateStrengthUI(password) {
     if (index < score) {
       bar.style.backgroundColor = color;
     } else {
-      bar.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+      bar.style.backgroundColor = '#e2e8f0';
     }
   });
 }
@@ -176,6 +177,7 @@ function saveHistory(history) {
 }
 
 function addToHistory(value, type) {
+  if (!value) return;
   let history = getHistory();
   // Avoid duplicate if same as the last generated item
   if (history.length > 0 && history[0].value === value) {
@@ -214,6 +216,7 @@ function clearAllHistory() {
  * Render History List UI
  */
 function renderHistory() {
+  if (typeof document === 'undefined') return;
   const historyList = document.getElementById('historyList');
   const clearHistoryBtn = document.getElementById('clearHistoryBtn');
   if (!historyList || !clearHistoryBtn) return;
@@ -251,7 +254,7 @@ function renderHistory() {
     // Copy event
     itemEl.querySelector('.copy-item-btn').addEventListener('click', (e) => {
       const val = e.currentTarget.getAttribute('data-value');
-      copyToClipboard(val);
+      copyToClipboard(val, false);
     });
 
     // Remove event
@@ -270,9 +273,16 @@ function escapeHtml(str) {
 
 /**
  * Copy to Clipboard Helper
+ * @param {string} text - Text to copy
+ * @param {boolean} shouldSaveToHistory - Whether to record this copy action into history persistence
  */
-function copyToClipboard(text) {
+function copyToClipboard(text, shouldSaveToHistory = true) {
   if (!text) return;
+
+  if (shouldSaveToHistory) {
+    addToHistory(text, currentMode === 'pin' ? 'PIN' : 'Senha');
+  }
+
   if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => showToast('Copiado para a área de transferência!'));
   } else if (typeof document !== 'undefined') {
@@ -292,6 +302,7 @@ function copyToClipboard(text) {
  */
 let toastTimeout;
 function showToast(msg) {
+  if (typeof document === 'undefined') return;
   const toast = document.getElementById('toast');
   if (!toast) return;
   toast.textContent = msg;
@@ -306,11 +317,11 @@ function showToast(msg) {
  * Generate Action Handler
  */
 function handleGenerate() {
-  const lengthSlider = document.getElementById('lengthSlider');
-  const chkNumbers = document.getElementById('chkNumbers');
-  const chkUppercase = document.getElementById('chkUppercase');
-  const chkLowercase = document.getElementById('chkLowercase');
-  const chkSymbols = document.getElementById('chkSymbols');
+  const lengthSlider = typeof document !== 'undefined' ? document.getElementById('lengthSlider') : null;
+  const chkNumbers = typeof document !== 'undefined' ? document.getElementById('chkNumbers') : null;
+  const chkUppercase = typeof document !== 'undefined' ? document.getElementById('chkUppercase') : null;
+  const chkLowercase = typeof document !== 'undefined' ? document.getElementById('chkLowercase') : null;
+  const chkSymbols = typeof document !== 'undefined' ? document.getElementById('chkSymbols') : null;
 
   const options = {
     length: lengthSlider ? parseInt(lengthSlider.value, 10) : 10,
@@ -324,13 +335,13 @@ function handleGenerate() {
   currentPassword = generatePasswordOptions(options);
   renderDisplayPassword();
   updateStrengthUI(currentPassword);
-  addToHistory(currentPassword, currentMode === 'pin' ? 'PIN' : 'Senha');
 }
 
 /**
  * Render Main Output Display
  */
 function renderDisplayPassword() {
+  if (typeof document === 'undefined') return;
   const passwordText = document.getElementById('passwordText');
   if (!passwordText) return;
 
@@ -347,6 +358,7 @@ function renderDisplayPassword() {
  * Event Listeners Registration
  */
 function initEvents() {
+  if (typeof document === 'undefined') return;
   const lengthSlider = document.getElementById('lengthSlider');
   const lengthValue = document.getElementById('lengthValue');
   const chkNumbers = document.getElementById('chkNumbers');
@@ -397,9 +409,19 @@ function initEvents() {
           if (currentMode === 'pin') {
             optionsGrid.style.opacity = '0.4';
             optionsGrid.style.pointerEvents = 'none';
+            // Set PIN default length to 4
+            if (lengthSlider && lengthValue) {
+              lengthSlider.value = 4;
+              lengthValue.textContent = '4';
+            }
           } else {
             optionsGrid.style.opacity = '1';
             optionsGrid.style.pointerEvents = 'auto';
+            // Set Custom Password default length to 10 if previously set to PIN default
+            if (lengthSlider && lengthValue && lengthSlider.value === '4') {
+              lengthSlider.value = 10;
+              lengthValue.textContent = '10';
+            }
           }
         }
 
@@ -412,11 +434,11 @@ function initEvents() {
   if (generateBtn) generateBtn.addEventListener('click', handleGenerate);
 
   // Copy Main Password
-  if (copyBtn) copyBtn.addEventListener('click', () => copyToClipboard(currentPassword));
+  if (copyBtn) copyBtn.addEventListener('click', () => copyToClipboard(currentPassword, true));
   if (passwordOutput) {
     passwordOutput.addEventListener('click', (e) => {
       if (!e.target.closest('.display-actions')) {
-        copyToClipboard(currentPassword);
+        copyToClipboard(currentPassword, true);
       }
     });
   }
@@ -459,6 +481,10 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     generatePasswordOptions,
     calculateStrength,
+    getHistory,
+    saveHistory,
+    addToHistory,
+    clearAllHistory,
     CHAR_SETS
   };
 }
